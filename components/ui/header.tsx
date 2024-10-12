@@ -12,7 +12,7 @@ const Header = () => {
   const {authenticated} = usePrivy();
   return (
     <div className="flex flex-row justify-between items-center w-full p-4 m-auto h-12">
-      <h2 className={`text-primary ${sixtyfour.className}`}>SwipeX</h2>
+      <h2 className={`text-primary text-2xl ${sixtyfour.className}`}>SwipeX</h2>
       {authenticated && (
         <div className="flex flex-row gap-2 items-center">
           <Button
@@ -21,7 +21,7 @@ const Header = () => {
             size={"icon"}
             className="text-white p-1"
           >
-            <PlusIcon className="w-6 h-6 text-white" />
+            <PlusIcon className="w-8 h-8 text-white" />
           </Button>
           <Button
             asChild
@@ -29,7 +29,7 @@ const Header = () => {
             size={"icon"}
             className="text-white p-1"
           >
-            <User className="w-6 h-6 text-white" />
+            <User className="w-8 h-8 text-white" />
           </Button>
         </div>
       )}
