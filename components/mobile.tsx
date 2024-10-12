@@ -1,5 +1,4 @@
 import React from "react";
-import {Button} from "./ui/button";
 import Header from "./ui/header";
 import Hero from "./hero";
 
