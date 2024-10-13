@@ -11,7 +11,7 @@ export const sixtyfour = Sixtyfour({
 const Header = () => {
   const {authenticated} = usePrivy();
   return (
-    <div className="flex flex-row justify-between items-center w-full p-4 m-auto h-12">
+    <div className="flex flex-row justify-between items-center w-full p-4 m-auto h-12 pt-8">
       <h2 className={`text-primary text-2xl ${sixtyfour.className}`}>SwipeX</h2>
       {authenticated && (
         <div className="flex flex-row gap-2 items-center">
