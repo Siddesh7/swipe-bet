@@ -7,7 +7,7 @@ import MainApp from "./main-app";
 const Mobile = () => {
   const {authenticated, ready} = usePrivy();
   return (
-    <div className="flex flex-col items-center justify-center h-screen w-screen overflow-hidden md:hidden">
+    <div className="flex flex-col h-[100vh] w-screen overflow-hidden md:hidden">
       <Header />
       {authenticated && ready ? <MainApp /> : <Hero />}
       {!ready && (

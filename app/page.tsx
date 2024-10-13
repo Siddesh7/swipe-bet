@@ -9,7 +9,7 @@ import Image from "next/image";
 export default function Home() {
   const {login, logout, ready, authenticated} = usePrivy();
   return (
-    <main>
+    <main className="max-h-screen overflow-hidden">
       <BigScreenPrompt />
       <Mobile />
     </main>
