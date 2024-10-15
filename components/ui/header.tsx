@@ -3,6 +3,8 @@ import {Sixtyfour} from "next/font/google";
 import {PlusIcon, User} from "lucide-react";
 import {Button} from "./button";
 import {usePrivy} from "@privy-io/react-auth";
+import NewBet from "../new-bet";
+
 export const sixtyfour = Sixtyfour({
   weight: "400",
   subsets: ["latin"],
@@ -21,7 +23,10 @@ const Header = () => {
             size={"icon"}
             className="text-white p-1"
           >
-            <PlusIcon className="w-8 h-8 text-white" />
+            <NewBet onCreateBet={(bet) => {
+              // Handle bet creation logic here
+              console.log('New bet created:', bet);
+            }} />
           </Button>
         </div>
       )}
