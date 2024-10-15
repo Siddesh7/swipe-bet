@@ -1,6 +1,8 @@
 import React from "react";
 import {Button} from "./ui/button";
 import {User} from "lucide-react";
+import { House } from "lucide-react";
+import  Profile  from "./profile";
 
 const MenuBar = () => {
   return (
@@ -11,23 +13,16 @@ const MenuBar = () => {
         size="icon"
         className="text-white hover:bg-white hover:bg-opacity-20"
       >
-        <User className="w-8 h-8 text-white" />
+        <House className="w-8 h-8 text-white" />
       </Button>
+     
       <Button
         asChild
         variant="ghost"
         size="icon"
         className="text-white hover:bg-white hover:bg-opacity-20"
       >
-        <User className="w-8 h-8 text-white" />
-      </Button>
-      <Button
-        asChild
-        variant="ghost"
-        size="icon"
-        className="text-white hover:bg-white hover:bg-opacity-20"
-      >
-        <User className="w-8 h-8 text-white" />
+       <Profile />
       </Button>
     </div>
   );
