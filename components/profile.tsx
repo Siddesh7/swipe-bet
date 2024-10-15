@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import { useBalance, useAccount } from "wagmi";
+import { usePrivy } from "@privy-io/react-auth";
+import { useEnsName } from "wagmi";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -12,11 +15,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Flame, Clock, Trophy, Target, User } from "lucide-react";
-
+import { base } from "wagmi/chains";
 // Static dummy data
 const dummyData = {
-  walletAddress: "0x1234...5678",
-  walletBalance: 2500,
   level: 7,
   xp: 85,
   placedBets: [
@@ -37,6 +38,24 @@ const dummyData = {
       loseOdds: 0.52,
       timeRemaining: "30d 12h",
       potentialWin: 104,
+    },
+    {
+      id: 3,
+      name: "Ethereum Price Prediction",
+      amount: 75,
+      winOdds: 0.3,
+      loseOdds: 0.7,
+      timeRemaining: "60d",
+      potentialWin: 225,
+    },
+    {
+      id: 3,
+      name: "Ethereum Price Prediction",
+      amount: 75,
+      winOdds: 0.3,
+      loseOdds: 0.7,
+      timeRemaining: "60d",
+      potentialWin: 225,
     },
     {
       id: 3,
@@ -68,6 +87,16 @@ const dummyData = {
       timeRemaining: "90d",
       participants: 500,
       totalPool: 10000,
+    },
+    {
+      id: 3,
+      name: "Sui Price Prediction",
+      description: "Predict the price of Sui in 2024",
+      image:
+        "https://cdn.pixabay.com/photo/2023/11/08/13/56/ai-generated-8374812_1280.jpg",
+      timeRemaining: "365d",
+      participants: 2000,
+      totalPool: 100000,
     },
     {
       id: 3,
@@ -156,19 +185,30 @@ const CreatedBetCard = ({ bet }: { bet: any }) => (
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("placed");
+  const { user } = usePrivy();
+  const { address } = useAccount();
+  const { data: balance } = useBalance({
+    address,
+    chainId: 8453, // Base mainnet chain ID
+  });
+  const { data: ensName } = useEnsName({ address });
+
+  const displayAddress = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : "Not connected";
 
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button
-          className=" bg-transparent text-white"
-          size="icon"
-        >
+        <Button className="bg-transparent text-white" size="icon">
           <User />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0 bg-black">
-        <SheetHeader className=" text-white p-4">
+      <SheetContent
+        side="right"
+        className="w-full h-full sm:max-w-md p-0 bg-black"
+      >
+        <SheetHeader className="text-white p-4">
           <SheetTitle className="text-xl font-bold">Betting Profile</SheetTitle>
         </SheetHeader>
         <div className="p-4 overflow-y-auto max-h-[calc(100vh-60px)]">
@@ -183,10 +223,10 @@ const Profile = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm mb-2 text-white">
-                Wallet: {dummyData.walletAddress}
+                Wallet: {displayAddress}
               </p>
               <p className="text-lg font-bold mb-4 text-white">
-                Balance: ${dummyData.walletBalance}
+                Balance: {balance ? `${balance.formatted} ETH` : "Loading..."}
               </p>
               <div className="flex items-center gap-2 mb-2">
                 <Progress value={dummyData.xp} className="w-full bg-gray-800" />
@@ -222,7 +262,7 @@ const Profile = () => {
             </TabsContent>
             <TabsContent
               value="created"
-              className="h-[calc(100vh-450px)] overflow-y-auto pr-2"
+              className="h-auto max-h-[calc(100vh-450px)] overflow-y-auto pr-2"
             >
               {dummyData.createdBets.map((bet) => (
                 <CreatedBetCard key={bet.id} bet={bet} />

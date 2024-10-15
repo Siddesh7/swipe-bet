@@ -1,7 +1,8 @@
-import type {Metadata, Viewport} from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import PrivyWalletProvider from "@/providers/privy-provider";
+import { Providers } from "@/components/providers";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -13,6 +14,7 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "100 900",
 });
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -35,7 +37,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <PrivyWalletProvider>{children}</PrivyWalletProvider>
+        <PrivyWalletProvider>
+          <Providers>{children}</Providers>
+        </PrivyWalletProvider>
       </body>
     </html>
   );
