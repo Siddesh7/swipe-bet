@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { Flame, Clock, Trophy, Target, User } from "lucide-react";
 import { base } from "wagmi/chains";
-// Static dummy data
+
 const dummyData = {
   level: 7,
   xp: 85,
@@ -187,9 +187,14 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState("placed");
   const { user } = usePrivy();
   const { address } = useAccount();
-  const { data: balance } = useBalance({
-    address,
-    chainId: 8453, // Base mainnet chain ID
+ const { data: ethBalance } = useBalance({
+   address,
+   chainId: base.id, // Base mainnet chain ID
+ });
+ const { data: usdcBalance } = useBalance({
+   address,
+   token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC contract address on Base
+    chainId: base.id,
   });
   const { data: ensName } = useEnsName({ address });
 
@@ -226,7 +231,8 @@ const Profile = () => {
                 Wallet: {displayAddress}
               </p>
               <p className="text-lg font-bold mb-4 text-white">
-                Balance: {balance ? `${balance.formatted} ETH` : "Loading..."}
+                USDC Balance:{" "}
+                {usdcBalance ? `${usdcBalance.formatted} USDC` : "Loading..."}
               </p>
               <div className="flex items-center gap-2 mb-2">
                 <Progress value={dummyData.xp} className="w-full bg-gray-800" />
