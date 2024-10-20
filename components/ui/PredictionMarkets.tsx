@@ -1,5 +1,5 @@
-// pages/index.tsx
 "use client";
+
 import {useState, useEffect} from "react";
 import {
   useAccount,
@@ -28,8 +28,7 @@ import {
 } from "@/components/ui/table";
 import Link from "next/link";
 
-import predictionMarketABI from "../lib/abi.json";
-
+import predictionMarketABI from "../../lib/abi.json";
 interface Market {
   marketId: string;
   outcome1: string;
@@ -46,7 +45,7 @@ interface NewMarket {
   requiredBond: string;
 }
 
-export default function CreateMarket() {
+export default function PredictionMarkets() {
   const {address} = useAccount();
   const [markets, setMarkets] = useState<Market[]>([]);
   const [newMarket, setNewMarket] = useState<NewMarket>({
@@ -65,11 +64,12 @@ export default function CreateMarket() {
 
   useEffect(() => {
     if (allMarkets) {
+      console.log(allMarkets);
       setMarkets(allMarkets[1] as Market[]);
     }
   }, [allMarkets]);
 
-  const {writeContract: initializeMarket, data: initializeData} =
+  const {writeContractAsync: initializeMarket, data: initializeData} =
     useWriteContract();
 
   const {isLoading: isInitializing, isSuccess: isInitialized} =
@@ -115,9 +115,7 @@ export default function CreateMarket() {
   }, [isInitialized, refetchMarkets]);
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Prediction Markets</h1>
-
+    <>
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>Create New Market</CardTitle>
@@ -204,6 +202,6 @@ export default function CreateMarket() {
           </Table>
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }

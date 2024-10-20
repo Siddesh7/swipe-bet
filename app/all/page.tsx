@@ -1,12 +1,10 @@
-import PredictionMarkets from "@/components/all-markets";
-import React from "react";
+import PredictionMarkets from "@/components/ui/PredictionMarkets";
 
-const Page = () => {
+export default function Home() {
   return (
-    <PredictionMarkets
-      contractAddress={process.env.NEXT_PUBLIC_PREDICTION_MARKET_ADDRESS}
-    />
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-4">Prediction Markets</h1>
+      <PredictionMarkets />
+    </div>
   );
-};
-
-export default Page;
+}
