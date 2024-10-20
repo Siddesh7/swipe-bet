@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Deposit from "@/components/deposit";
+import NewBet from "@/components/new-bet";
 import {
   Sheet,
   SheetContent,
@@ -49,7 +51,7 @@ const dummyData = {
       potentialWin: 225,
     },
     {
-      id: 3,
+      id: 4,
       name: "Ethereum Price Prediction",
       amount: 75,
       winOdds: 0.3,
@@ -58,7 +60,7 @@ const dummyData = {
       potentialWin: 225,
     },
     {
-      id: 3,
+      id: 5,
       name: "Ethereum Price Prediction",
       amount: 75,
       winOdds: 0.3,
@@ -99,7 +101,7 @@ const dummyData = {
       totalPool: 100000,
     },
     {
-      id: 3,
+      id: 4,
       name: "Sui Price Prediction",
       description: "Predict the price of Sui in 2024",
       image:
@@ -185,15 +187,16 @@ const CreatedBetCard = ({ bet }: { bet: any }) => (
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("placed");
+  const [createdBets, setCreatedBets] = useState(dummyData.createdBets);
   const { user } = usePrivy();
   const { address } = useAccount();
- const { data: ethBalance } = useBalance({
-   address,
-   chainId: base.id, // Base mainnet chain ID
- });
- const { data: usdcBalance } = useBalance({
-   address,
-   token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC contract address on Base
+  const { data: ethBalance } = useBalance({
+    address,
+    chainId: base.id, // Base mainnet chain ID
+  });
+  const { data: usdcBalance } = useBalance({
+    address,
+    token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC contract address on Base
     chainId: base.id,
   });
   const { data: ensName } = useEnsName({ address });
@@ -201,6 +204,21 @@ const Profile = () => {
   const displayAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : "Not connected";
+
+  const handleCreateBet = (betData: any) => {
+    const newBet = {
+      id: createdBets.length + 1,
+      name: `${betData.outcome1} vs ${betData.outcome2}`,
+      description: betData.description,
+      image:
+        betData.image ||
+        "https://cdn.pixabay.com/photo/2023/11/08/13/56/ai-generated-8374812_1280.jpg",
+      timeRemaining: "365d", // You might want to calculate this based on current time
+      participants: 0,
+      totalPool: 0,
+    };
+    setCreatedBets([newBet, ...createdBets]);
+  };
 
   return (
     <Sheet>
@@ -230,10 +248,14 @@ const Profile = () => {
               <p className="text-sm mb-2 text-white">
                 Wallet: {displayAddress}
               </p>
-              <p className="text-lg font-bold mb-4 text-white">
+              <p className="text-lg font-bold mb-4 text-white flex justify-between items-center">
                 USDC Balance:{" "}
-                {usdcBalance ? `${usdcBalance.formatted} USDC` : "Loading..."}
+                {usdcBalance
+                  ? `${Number(usdcBalance.value) / 1e6} USDC`
+                  : "Loading..."}
+                <Deposit />
               </p>
+
               <div className="flex items-center gap-2 mb-2">
                 <Progress value={dummyData.xp} className="w-full bg-gray-800" />
                 <span className="text-sm text-white">{dummyData.xp}%</span>
@@ -270,7 +292,10 @@ const Profile = () => {
               value="created"
               className="h-auto max-h-[calc(100vh-450px)] overflow-y-auto pr-2"
             >
-              {dummyData.createdBets.map((bet) => (
+              <div className="flex justify-end mb-4">
+                <NewBet />
+              </div>
+              {createdBets.map((bet) => (
                 <CreatedBetCard key={bet.id} bet={bet} />
               ))}
             </TabsContent>

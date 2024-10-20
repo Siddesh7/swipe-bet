@@ -103,8 +103,8 @@ const BetCard: React.FC<BetCardProps> = ({
             className="rounded-full bg-red-500 text-white flex flex-row gap-1 hover:bg-red-400"
             onClick={onNoClick}
           >
-            <X size={24} />
-            <span>Bet No</span>
+            <X  />
+           
           </Button>
           <Button
             variant={"outline"}
@@ -119,7 +119,7 @@ const BetCard: React.FC<BetCardProps> = ({
             className="rounded-full bg-green-500 text-white flex flex-row gap-1 hover:bg-green-400"
           >
             <Check size={24} />
-            <span>Bet Yes</span>
+            
           </Button>
         </div>
       </div>
