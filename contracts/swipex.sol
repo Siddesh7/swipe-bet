@@ -1,233 +1,401 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract GoalBetting {
-    struct Bet {
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+contract PredictionMarketplace is Ownable, ReentrancyGuard, Pausable {
+    using SafeERC20 for IERC20;
+
+    struct Prediction {
         address creator;
-        string goal;
-        uint256 stakingAmount;
-        uint256 totalParticipants;
-        uint256 currentParticipants;
-        mapping(address => bool) participants;
-        mapping(address => bool) completedGoal;
-        mapping(address => address) votes;
-        mapping(address => uint256) voteCount;
-        bool isActive;
-        bool isFinalized;
-        uint256 creationTime;
-        uint256 deadline;
-        uint256 votingDeadline;
-        address winner;
+        string question;
+        string imageUri;
+        uint256 resolutionTime;
+        uint256 bettingEndTime;
+        bool isResolved;
+        bool outcome;
+        uint256 totalYesAmount;
+        uint256 totalNoAmount;
+        bool exists;
     }
 
-    mapping(uint256 => Bet) public bets;
-    uint256[] public betCodes;
-    uint256 public nextBetCode = 100000; // Start from 100000 to ensure 6 digits
-
-    uint256 public constant MAX_DURATION = 365 days;
-    uint256 public constant MIN_DURATION = 1 days;
-    uint256 public constant VOTING_DURATION = 7 days;
-
-    event BetCreated(uint256 indexed betCode, address indexed creator, string goal, uint256 stakingAmount, uint256 totalParticipants, uint256 deadline, uint256 votingDeadline);
-    event BetJoined(uint256 indexed betCode, address indexed participant);
-    event GoalCompleted(uint256 indexed betCode, address indexed participant);
-    event VoteCast(uint256 indexed betCode, address indexed voter, address indexed votedFor);
-    event BetFinalized(uint256 indexed betCode, address winner, uint256 winningVoteCount);
-    event StakeWithdrawn(uint256 indexed betCode, address indexed participant, uint256 amount);
-    event BetCancelled(uint256 indexed betCode);
-
-    function createBet(string memory _goal, uint256 _stakingAmount, uint256 _totalParticipants, uint256 _duration) public payable returns (uint256) {
-        require(msg.value == _stakingAmount, "Must send exact staking amount");
-        require(_totalParticipants > 0, "Total participants must be at least 1");
-        require(_duration >= MIN_DURATION && _duration <= MAX_DURATION, "Invalid duration");
-
-        uint256 betCode = nextBetCode++;
-        if (nextBetCode > 999999) {
-            nextBetCode = 100000; // Reset to 100000 if we reach 999999
-        }
-        
-        Bet storage newBet = bets[betCode];
-        newBet.creator = msg.sender;
-        newBet.goal = _goal;
-        newBet.stakingAmount = _stakingAmount;
-        newBet.totalParticipants = _totalParticipants;
-        newBet.currentParticipants = 1;
-        newBet.participants[msg.sender] = true;
-        newBet.isActive = _totalParticipants > 1; // Single-participant bets are not active for joining
-        newBet.creationTime = block.timestamp;
-        newBet.deadline = block.timestamp + _duration;
-        newBet.votingDeadline = newBet.deadline + VOTING_DURATION;
-
-        betCodes.push(betCode);
-
-        emit BetCreated(betCode, msg.sender, _goal, _stakingAmount, _totalParticipants, newBet.deadline, newBet.votingDeadline);
-        return betCode;
+    struct PredictionView {
+        uint256 id;
+        address creator;
+        string question;
+        string imageUri;
+        uint256 resolutionTime;
+        uint256 bettingEndTime;
+        bool isResolved;
+        bool outcome;
+        uint256 totalYesAmount;
+        uint256 totalNoAmount;
     }
 
-    function joinBet(uint256 _betCode) public payable {
-        Bet storage bet = bets[_betCode];
-        require(bet.isActive, "Bet is not active for joining");
-        require(!bet.participants[msg.sender], "Already participating in this bet");
-        require(msg.value == bet.stakingAmount, "Must send exact staking amount");
-        require(bet.currentParticipants < bet.totalParticipants, "Bet is full");
-        require(block.timestamp < bet.deadline, "Bet deadline has passed");
-
-        bet.participants[msg.sender] = true;
-        bet.currentParticipants++;
-
-        if (bet.currentParticipants == bet.totalParticipants) {
-            bet.isActive = false;
-        }
-
-        emit BetJoined(_betCode, msg.sender);
+    struct Bet {
+        uint256 amount;
+        bool choice; // true for Yes, false for No
+        bool claimed;
     }
 
-    function completeGoal(uint256 _betCode) public {
-        Bet storage bet = bets[_betCode];
-        require(bet.participants[msg.sender], "Not a participant in this bet");
-        require(!bet.completedGoal[msg.sender], "Goal already marked as completed");
-        require(block.timestamp <= bet.deadline, "Bet deadline has passed");
+    uint256 public constant PLATFORM_FEE = 2; // 2% platform fee
+    uint256 public constant MAX_URI_LENGTH = 300; // Maximum length for imageUri
+    uint256 public constant MIN_BETTING_DURATION = 1 hours;
+    uint256 public constant MAX_BETTING_DURATION = 90 days;
+    uint256 public constant MIN_RESOLUTION_BUFFER = 1 days;
+    uint256 public constant MAX_RESOLUTION_DURATION = 180 days;
+    
+    uint256 public predictionCounter;
+    IERC20 public immutable usdc;
+    
+    mapping(uint256 => Prediction) public predictions;
+    mapping(uint256 => mapping(address => Bet)) public bets;
+    mapping(address => uint256) public userBalances;
+    
+    event PredictionCreated(
+        uint256 indexed predictionId,
+        address indexed creator,
+        string question,
+        string imageUri,
+        uint256 resolutionTime,
+        uint256 bettingEndTime
+    );
+    
+    event BetPlaced(
+        uint256 indexed predictionId,
+        address indexed bettor,
+        bool choice,
+        uint256 amount
+    );
+    
+    event PredictionResolved(
+        uint256 indexed predictionId,
+        bool outcome
+    );
+    
+    event WinningsClaimed(
+        uint256 indexed predictionId,
+        address indexed bettor,
+        uint256 amount
+    );
 
-        bet.completedGoal[msg.sender] = true;
-        emit GoalCompleted(_betCode, msg.sender);
+    event Deposit(address indexed user, uint256 amount);
+    event Withdrawal(address indexed user, uint256 amount);
+    event PlatformFeesWithdrawn(address indexed to, uint256 amount);
+
+    modifier validPredictionId(uint256 _predictionId) {
+        require(predictions[_predictionId].exists, "Prediction does not exist");
+        _;
     }
 
-    function vote(uint256 _betCode, address _votedFor) public {
-        Bet storage bet = bets[_betCode];
-        require(block.timestamp > bet.deadline && block.timestamp <= bet.votingDeadline, "Not within voting period");
-        require(!bet.isFinalized, "Bet is already finalized");
-        require(bet.participants[_votedFor], "Voted address is not a participant");
-        require(bet.completedGoal[_votedFor], "Voted participant did not complete the goal");
-        
-        if (bet.totalParticipants > 1) {
-            require(bet.participants[msg.sender], "Only participants can vote for multi-participant bets");
-        }
-
-        // Remove previous vote if exists
-        if (bet.votes[msg.sender] != address(0)) {
-            bet.voteCount[bet.votes[msg.sender]]--;
-        }
-
-        bet.votes[msg.sender] = _votedFor;
-        bet.voteCount[_votedFor]++;
-
-        emit VoteCast(_betCode, msg.sender, _votedFor);
+    modifier validImageUri(string memory _imageUri) {
+        require(bytes(_imageUri).length > 0, "Image URI cannot be empty");
+        require(bytes(_imageUri).length <= MAX_URI_LENGTH, "Image URI too long");
+        require(
+            _startsWithValidProtocol(_imageUri),
+            "Image URI must start with http://, https://, or ipfs://"
+        );
+        _;
     }
 
-    function finalizeBet(uint256 _betCode) public {
-        Bet storage bet = bets[_betCode];
-        require(msg.sender == bet.creator, "Only creator can finalize the bet");
-        require(block.timestamp > bet.votingDeadline, "Voting period has not ended");
-        require(!bet.isFinalized, "Bet is already finalized");
-
-        address winningParticipant = address(0);
-        uint256 highestVotes = 0;
-
-        for (uint256 i = 0; i < bet.currentParticipants; i++) {
-            address participant = getParticipantAtIndex(_betCode, i);
-            if (bet.voteCount[participant] > highestVotes) {
-                winningParticipant = participant;
-                highestVotes = bet.voteCount[participant];
-            }
-        }
-
-        require(winningParticipant != address(0), "No valid winner found");
-
-        bet.winner = winningParticipant;
-        bet.isFinalized = true;
-        emit BetFinalized(_betCode, winningParticipant, highestVotes);
+    constructor(address _usdc) Ownable(msg.sender) {
+        require(_usdc != address(0), "Invalid USDC address");
+        usdc = IERC20(_usdc);
+        predictionCounter = 0;
     }
 
-    function withdrawStake(uint256 _betCode) public {
-        Bet storage bet = bets[_betCode];
-        require(bet.isFinalized, "Bet is not finalized yet");
-        require(msg.sender == bet.winner, "Only the winner can withdraw");
-
-        uint256 amountToWithdraw = bet.stakingAmount * bet.currentParticipants;
-        
-        bet.participants[msg.sender] = false;
-        payable(msg.sender).transfer(amountToWithdraw);
-
-        emit StakeWithdrawn(_betCode, msg.sender, amountToWithdraw);
-    }
-
-    function cancelBet(uint256 _betCode) public {
-        Bet storage bet = bets[_betCode];
-        require(msg.sender == bet.creator, "Only creator can cancel the bet");
-        require(bet.isActive || bet.totalParticipants == 1, "Bet cannot be cancelled");
-        require(bet.currentParticipants < bet.totalParticipants || bet.totalParticipants == 1, "Cannot cancel a full bet");
-
-        bet.isActive = false;
-        bet.isFinalized = true;
-
-        for (uint256 i = 0; i < bet.currentParticipants; i++) {
-            address participant = getParticipantAtIndex(_betCode, i);
-            payable(participant).transfer(bet.stakingAmount);
-        }
-
-        emit BetCancelled(_betCode);
-    }
-
-    function getParticipantAtIndex(uint256 _betCode, uint256 _index) public view returns (address) {
-        Bet storage bet = bets[_betCode];
-        require(_index < bet.currentParticipants, "Index out of bounds");
-
-        uint256 count = 0;
-        for (uint256 i = 0; i < betCodes.length; i++) {
-            address potentialParticipant = address(uint160(uint256(keccak256(abi.encodePacked(_betCode, i)))));
-            if (bet.participants[potentialParticipant]) {
-                if (count == _index) {
-                    return potentialParticipant;
-                }
-                count++;
-            }
-        }
-
-        revert("Participant not found");
-    }
-
-    function getBetInfo(uint256 _betCode) public view returns (
-        address creator,
-        string memory goal,
-        uint256 stakingAmount,
-        uint256 totalParticipants,
-        uint256 currentParticipants,
-        bool isActive,
-        bool isFinalized,
-        uint256 creationTime,
-        uint256 deadline,
-        uint256 votingDeadline,
-        address winner
-    ) {
-        Bet storage bet = bets[_betCode];
+    function _startsWithValidProtocol(string memory _uri) internal pure returns (bool) {
+        bytes memory uri = bytes(_uri);
         return (
-            bet.creator,
-            bet.goal,
-            bet.stakingAmount,
-            bet.totalParticipants,
-            bet.currentParticipants,
-            bet.isActive,
-            bet.isFinalized,
-            bet.creationTime,
-            bet.deadline,
-            bet.votingDeadline,
-            bet.winner
+            _startsWith(uri, "http://") ||
+            _startsWith(uri, "https://") ||
+            _startsWith(uri, "ipfs://")
         );
     }
 
-    function getAllBets() public view returns (uint256[] memory) {
-        return betCodes;
+    function _startsWith(bytes memory _full, string memory _prefix) internal pure returns (bool) {
+        bytes memory prefix = bytes(_prefix);
+        if (prefix.length > _full.length) return false;
+        for (uint256 i = 0; i < prefix.length; i++) {
+            if (_full[i] != prefix[i]) return false;
+        }
+        return true;
     }
 
-    function isParticipant(uint256 _betCode, address _participant) public view returns (bool) {
-        return bets[_betCode].participants[_participant];
+    function deposit(uint256 _amount) external whenNotPaused nonReentrant {
+        require(_amount > 0, "Amount must be positive");
+        
+        userBalances[msg.sender] += _amount;
+        usdc.safeTransferFrom(msg.sender, address(this), _amount);
+        
+        emit Deposit(msg.sender, _amount);
     }
 
-    function hasCompletedGoal(uint256 _betCode, address _participant) public view returns (bool) {
-        return bets[_betCode].completedGoal[_participant];
+    function withdraw(uint256 _amount) external whenNotPaused nonReentrant {
+        require(_amount > 0, "Amount must be positive");
+        require(userBalances[msg.sender] >= _amount, "Insufficient balance");
+        
+        userBalances[msg.sender] -= _amount;
+        usdc.safeTransfer(msg.sender, _amount);
+        
+        emit Withdrawal(msg.sender, _amount);
     }
 
-    function getVoteCount(uint256 _betCode, address _participant) public view returns (uint256) {
-        return bets[_betCode].voteCount[_participant];
+    function createPrediction(
+        string memory _question,
+        string memory _imageUri,
+        uint256 _bettingDuration,
+        uint256 _resolutionDuration
+    ) 
+        external 
+        whenNotPaused 
+        validImageUri(_imageUri)
+        returns (uint256) 
+    {
+        require(bytes(_question).length > 0, "Question cannot be empty");
+        require(_bettingDuration >= MIN_BETTING_DURATION, "Betting duration too short");
+        require(_bettingDuration <= MAX_BETTING_DURATION, "Betting duration too long");
+        require(_resolutionDuration > _bettingDuration + MIN_RESOLUTION_BUFFER, 
+                "Resolution buffer too short");
+        require(_resolutionDuration <= MAX_RESOLUTION_DURATION, "Resolution duration too long");
+        
+        uint256 predictionId = predictionCounter++;
+        uint256 bettingEndTime = block.timestamp + _bettingDuration;
+        uint256 resolutionTime = block.timestamp + _resolutionDuration;
+        
+        predictions[predictionId] = Prediction({
+            creator: msg.sender,
+            question: _question,
+            imageUri: _imageUri,
+            resolutionTime: resolutionTime,
+            bettingEndTime: bettingEndTime,
+            isResolved: false,
+            outcome: false,
+            totalYesAmount: 0,
+            totalNoAmount: 0,
+            exists: true
+        });
+        
+        emit PredictionCreated(
+            predictionId,
+            msg.sender,
+            _question,
+            _imageUri,
+            resolutionTime,
+            bettingEndTime
+        );
+        
+        return predictionId;
+    }
+
+    function placeBet(
+        uint256 _predictionId, 
+        bool _choice,
+        uint256 _amount
+    ) 
+        external 
+        whenNotPaused
+        nonReentrant 
+        validPredictionId(_predictionId)
+    {
+        Prediction storage prediction = predictions[_predictionId];
+        
+        require(!prediction.isResolved, "Prediction already resolved");
+        require(block.timestamp < prediction.bettingEndTime, "Betting period ended");
+        require(_amount > 0, "Bet amount must be positive");
+        require(userBalances[msg.sender] >= _amount, "Insufficient balance");
+        
+        userBalances[msg.sender] -= _amount;
+        
+        if (_choice) {
+            prediction.totalYesAmount += _amount;
+        } else {
+            prediction.totalNoAmount += _amount;
+        }
+        
+        bets[_predictionId][msg.sender] = Bet({
+            amount: _amount,
+            choice: _choice,
+            claimed: false
+        });
+        
+        emit BetPlaced(_predictionId, msg.sender, _choice, _amount);
+    }
+
+    function resolvePrediction(uint256 _predictionId, bool _outcome) 
+        external 
+        whenNotPaused
+        validPredictionId(_predictionId)
+    {
+        Prediction storage prediction = predictions[_predictionId];
+        
+        require(msg.sender == prediction.creator, "Only creator can resolve");
+        require(!prediction.isResolved, "Already resolved");
+        require(block.timestamp >= prediction.bettingEndTime, "Betting period not ended");
+        require(block.timestamp <= prediction.resolutionTime, "Resolution period expired");
+        
+        prediction.isResolved = true;
+        prediction.outcome = _outcome;
+        
+        emit PredictionResolved(_predictionId, _outcome);
+    }
+
+    function claimWinnings(uint256 _predictionId) 
+        external 
+        whenNotPaused
+        nonReentrant 
+        validPredictionId(_predictionId)
+    {
+        Prediction storage prediction = predictions[_predictionId];
+        Bet storage bet = bets[_predictionId][msg.sender];
+        
+        require(prediction.isResolved, "Prediction not resolved yet");
+        require(bet.amount > 0, "No bet placed");
+        require(!bet.claimed, "Winnings already claimed");
+        require(bet.choice == prediction.outcome, "Bet on wrong outcome");
+        
+        uint256 totalPool = prediction.totalYesAmount + prediction.totalNoAmount;
+        uint256 winningPool = prediction.outcome ? 
+            prediction.totalYesAmount : 
+            prediction.totalNoAmount;
+        
+        uint256 platformFeeAmount = (totalPool * PLATFORM_FEE) / 100;
+        uint256 winningPoolAfterFee = totalPool - platformFeeAmount;
+        uint256 winnings = (bet.amount * winningPoolAfterFee) / winningPool;
+        
+        bet.claimed = true;
+        userBalances[msg.sender] += winnings;
+        
+        emit WinningsClaimed(_predictionId, msg.sender, winnings);
+    }
+
+    function getAllPredictions() external view returns (PredictionView[] memory) {
+        PredictionView[] memory allPredictions = new PredictionView[](predictionCounter);
+        
+        for (uint256 i = 0; i < predictionCounter; i++) {
+            Prediction storage pred = predictions[i];
+            if (pred.exists) {
+                allPredictions[i] = PredictionView({
+                    id: i,
+                    creator: pred.creator,
+                    question: pred.question,
+                    imageUri: pred.imageUri,
+                    resolutionTime: pred.resolutionTime,
+                    bettingEndTime: pred.bettingEndTime,
+                    isResolved: pred.isResolved,
+                    outcome: pred.outcome,
+                    totalYesAmount: pred.totalYesAmount,
+                    totalNoAmount: pred.totalNoAmount
+                });
+            }
+        }
+        
+        return allPredictions;
+    }
+
+    function getActivePredictions() external view returns (PredictionView[] memory) {
+        uint256 activeCount = 0;
+        
+        for (uint256 i = 0; i < predictionCounter; i++) {
+            if (predictions[i].exists && !predictions[i].isResolved && 
+                block.timestamp < predictions[i].bettingEndTime) {
+                activeCount++;
+            }
+        }
+        
+        PredictionView[] memory activePredictions = new PredictionView[](activeCount);
+        uint256 currentIndex = 0;
+        
+        for (uint256 i = 0; i < predictionCounter; i++) {
+            Prediction storage pred = predictions[i];
+            if (pred.exists && !pred.isResolved && 
+                block.timestamp < pred.bettingEndTime) {
+                activePredictions[currentIndex] = PredictionView({
+                    id: i,
+                    creator: pred.creator,
+                    question: pred.question,
+                    imageUri: pred.imageUri,
+                    resolutionTime: pred.resolutionTime,
+                    bettingEndTime: pred.bettingEndTime,
+                    isResolved: pred.isResolved,
+                    outcome: pred.outcome,
+                    totalYesAmount: pred.totalYesAmount,
+                    totalNoAmount: pred.totalNoAmount
+                });
+                currentIndex++;
+            }
+        }
+        
+        return activePredictions;
+    }
+
+    function getPredictionDetails(uint256 _predictionId) 
+        external 
+        view 
+        validPredictionId(_predictionId)
+        returns (
+            address creator,
+            string memory question,
+            string memory imageUri,
+            uint256 resolutionTime,
+            uint256 bettingEndTime,
+            bool isResolved,
+            bool outcome,
+            uint256 totalYesAmount,
+            uint256 totalNoAmount
+        ) 
+    {
+        Prediction storage prediction = predictions[_predictionId];
+        
+        return (
+            prediction.creator,
+            prediction.question,
+            prediction.imageUri,
+            prediction.resolutionTime,
+            prediction.bettingEndTime,
+            prediction.isResolved,
+            prediction.outcome,
+            prediction.totalYesAmount,
+            prediction.totalNoAmount
+        );
+    }
+
+    function getBetDetails(uint256 _predictionId, address _bettor) 
+        external 
+        view 
+        validPredictionId(_predictionId)
+        returns (uint256 amount, bool choice, bool claimed) 
+    {
+        Bet storage bet = bets[_predictionId][_bettor];
+        return (bet.amount, bet.choice, bet.claimed);
+    }
+
+    function getBalance() external view returns (uint256) {
+        return userBalances[msg.sender];
+    }
+
+    function withdrawPlatformFees(address _to) external onlyOwner nonReentrant {
+        require(_to != address(0), "Invalid address");
+        uint256 platformFeesBalance = usdc.balanceOf(address(this)) - getTotalUserBalances();
+        require(platformFeesBalance > 0, "No fees to withdraw");
+        
+        usdc.safeTransfer(_to, platformFeesBalance);
+        emit PlatformFeesWithdrawn(_to, platformFeesBalance);
+    }
+
+    function getTotalUserBalances() public view returns (uint256) {
+        return usdc.balanceOf(address(this));
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 }
