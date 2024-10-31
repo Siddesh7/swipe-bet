@@ -2,30 +2,26 @@
   <img src="./public//logo.png" alt="Prediction Marketplace Logo" width="200">
 </div>
 
-A seamless, Tinder-like prediction marketplace built on the Aurora blockchain where users can create predictions, place bets, and participate in market.
+A seamless, Tinder-like prediction marketplace built on the Aurora blockchain. Swipe-Bet enables a clean tinder-like swipe experience to remove the web3 friction whatsover and make it more gaamified for a social betting marketplace.
 
 ## 🌟 Key Features
 
 - **Swipe-to-Predict Interface**: Tinder-like experience for browsing and interacting with prediction markets
-- **Gasless Betting**: Place bets without signing transactions for each interaction
-- **AI-Powered Resolution**: Automated market resolution using AI agents and MASA protocol
-- **Challenge System**: Ability to contest AI decisions for fair market outcomes
+- **Gasless Betting**: Place bets without signing transactions for each interaction, the deployer wallet relays the tx
+- **AI-agent resolution**: AI agent resolves the market based on the data from MASA api
+- **Dispute**: User can dispute the AI resoltion.
 
 
 ## 🏗 Technical Architecture
 
 ### Smart Contracts
 - Prediction Market Contract
-- Gasless Transaction Handler
-- Challenge Resolution System
 
 ### AI Resolution System
 - Integration with MASA protocol
-- Automated information verification from:
+- Information verification from:
   - Google Search Results
   - Twitter Data
-- Resolution Algorithm
-- Challenge Processing
 
 
 ## 🔮 Future Roadmap
@@ -39,24 +35,6 @@ A seamless, Tinder-like prediction marketplace built on the Aurora blockchain wh
 - Emerging social media conversations
 
 
-### Enhanced AI Capabilities
-- Real-time Trend Analysis
-
-- Continuous monitoring of social media trends
-- Sentiment analysis of public discussions
-- Popularity tracking and market potential assessment
-- Automated market liquidity optimization
-
-### Smart Market Selection
-
-- Intelligent Filtering System
-
-- Relevance scoring for potential markets
-- Spam and low-quality topic filtering
-- Duplicate market prevention
-- Community interest prediction
-
-
 ### Automated Market Management
 
 - Dynamic Market Parameters
@@ -66,16 +44,6 @@ A seamless, Tinder-like prediction marketplace built on the Aurora blockchain wh
 - Automated stake size recommendations
 - Risk assessment for different market types
 
-
-
-### User Experience Enhancements
-
-- Personalized Market Discovery
-
-- Custom market recommendations based on user interests
-- Trending markets notifications
-- Category-based market organization
-- Social sharing integration
 
 
 ## 📱 Live Deployment
