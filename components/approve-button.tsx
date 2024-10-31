@@ -1,12 +1,13 @@
-import { PREDICTION_MARKET_ADDRESS, USDC_ADDRESS } from "@/constants";
-import React, { useEffect, useState } from "react";
-import { erc20Abi, parseEther } from "viem";
-import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import {PREDICTION_MARKET_ADDRESS, USDC_ADDRESS} from "@/constants";
+import React, {useEffect, useState} from "react";
+import {erc20Abi, parseEther} from "viem";
+import {useWaitForTransactionReceipt, useWriteContract} from "wagmi";
+import {Button} from "./ui/button";
 
-const ApproveButton = () => {
+const ApproveButton = ({onSuccess}: {onSuccess: (success: any) => void}) => {
   const [hash, setHash] = useState<any>();
-  const { writeContractAsync } = useWriteContract();
-  const { data, isSuccess, isLoading } = useWaitForTransactionReceipt({
+  const {writeContractAsync} = useWriteContract();
+  const {data, isSuccess, isLoading} = useWaitForTransactionReceipt({
     hash,
   });
 
@@ -20,9 +21,21 @@ const ApproveButton = () => {
     setHash(hash);
   };
 
+  useEffect(() => {
+    if (isSuccess) {
+      onSuccess(data);
+    }
+  }, [isSuccess]);
+
   return (
     <div>
-      <button onClick={approveHandler}>Apporve</button>
+      <Button
+        onClick={approveHandler}
+        disabled={isLoading}
+        className="px-4 py-2 w-full rounded disabled:opacity-50"
+      >
+        {isLoading ? "Approving..." : "Approve"}
+      </Button>
     </div>
   );
 };

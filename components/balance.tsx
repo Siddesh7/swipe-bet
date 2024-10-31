@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect} from "react";
 import {
   useAccount,
   useWriteContract,
@@ -7,8 +7,8 @@ import {
   useReadContract,
   useSimulateContract,
 } from "wagmi";
-import { erc20Abi, parseUnits } from "viem";
-import { Button } from "@/components/ui/button";
+import {erc20Abi, parseUnits} from "viem";
+import {Button} from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +17,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {Input} from "@/components/ui/input";
+import {Alert, AlertDescription} from "@/components/ui/alert";
 import {
   Loader2,
   ArrowRight,
@@ -26,7 +26,7 @@ import {
   AlertCircle,
   DollarSign,
 } from "lucide-react";
-import { PREDICTION_MARKET_ADDRESS, USDC_ADDRESS } from "../constants/index";
+import {PREDICTION_MARKET_ADDRESS, USDC_ADDRESS} from "../constants/index";
 import PREDICTION_MARKET_ABI from "../lib/abi.json";
 import DepositButton from "./deposit-button";
 import ApproveButton from "./approve-button";
@@ -45,7 +45,7 @@ interface TransactionStatus {
 
 const PRESET_AMOUNTS = [5, 10, 15];
 
-export const Deposit: React.FC<DepositProps> = ({ className, onSuccess }) => {
+export const Balance: React.FC<DepositProps> = ({className, onSuccess}) => {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
@@ -56,21 +56,21 @@ export const Deposit: React.FC<DepositProps> = ({ className, onSuccess }) => {
     isError: false,
   });
 
-  const { address } = useAccount();
+  const {address} = useAccount();
 
-  const { data: usdcBalance, refetch: refetchUsdcBalance } = useBalance({
+  const {data: usdcBalance, refetch: refetchUsdcBalance} = useBalance({
     address,
     token: USDC_ADDRESS,
   });
 
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+  const {data: allowance, refetch: refetchAllowance} = useReadContract({
     address: USDC_ADDRESS,
     abi: erc20Abi,
     functionName: "allowance",
     args: address ? [address, PREDICTION_MARKET_ADDRESS] : undefined,
   });
 
-  const { data: contractBalance, refetch: refetchContractBalance } =
+  const {data: contractBalance, refetch: refetchContractBalance} =
     useReadContract({
       address: PREDICTION_MARKET_ADDRESS,
       abi: PREDICTION_MARKET_ABI,
@@ -156,11 +156,16 @@ export const Deposit: React.FC<DepositProps> = ({ className, onSuccess }) => {
                 console.log(e);
               }}
               onSuccess={(e) => {
-                console.log(e);
+                setOpen(false);
+                refetchContractBalance();
               }}
             />
           ) : (
-            <ApproveButton />
+            <ApproveButton
+              onSuccess={() => {
+                setNeedsApproval(false);
+              }}
+            />
           )}
         </div>
       </DialogContent>
@@ -168,4 +173,4 @@ export const Deposit: React.FC<DepositProps> = ({ className, onSuccess }) => {
   );
 };
 
-export default Deposit;
+export default Balance;

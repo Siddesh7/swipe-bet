@@ -1,8 +1,7 @@
 import React from "react";
 import MenuBar from "./menu-bar";
 import Bets from "./bets";
-import { CreatePrediction } from "./create-prediction";
-import ReadBets from "./read-bets";
+import {CreatePrediction} from "./create-prediction";
 
 const MainApp = () => {
   return (
@@ -11,8 +10,8 @@ const MainApp = () => {
         <Bets />
       </div>
       <div className="container mx-auto">
-        <h1 className="text-2xl font-bold mb-6 text-white">
-          Prediction Market
+        <h1 className="text-2xl font-bold mb-6 text-white w-[90%] m-auto">
+          Markets
         </h1>
         <Bets />
       </div>
