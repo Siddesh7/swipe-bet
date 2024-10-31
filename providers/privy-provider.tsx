@@ -5,21 +5,21 @@ import {PrivyProvider} from "@privy-io/react-auth";
 // Make sure to import these from `@privy-io/wagmi`, not `wagmi`
 import {WagmiProvider, createConfig} from "@privy-io/wagmi";
 
-import {auroraTestnet, baseSepolia} from "viem/chains";
+import {auroraTestnet, aurora} from "viem/chains";
 import {http} from "wagmi";
 
 import type {PrivyClientConfig} from "@privy-io/react-auth";
 
 export const privyConfig: PrivyClientConfig = {
-  defaultChain: baseSepolia,
-  supportedChains: [baseSepolia],
+  defaultChain: aurora,
+  supportedChains: [aurora],
 };
 // Replace these with your app's chains
 
 export const config = createConfig({
-  chains: [baseSepolia],
+  chains: [aurora],
   transports: {
-    [baseSepolia.id]: http(),
+    [aurora.id]: http(),
   },
 });
 const queryClient = new QueryClient();
