@@ -195,7 +195,8 @@ contract PredictionMarketplace is Ownable, ReentrancyGuard, Pausable {
     function placeBet(
         uint256 _predictionId, 
         bool _choice,
-        uint256 _amount
+        uint256 _amount,
+        address _sender
     ) 
         external 
         whenNotPaused
@@ -207,9 +208,9 @@ contract PredictionMarketplace is Ownable, ReentrancyGuard, Pausable {
         require(!prediction.isResolved, "Prediction already resolved");
         require(block.timestamp < prediction.bettingEndTime, "Betting period ended");
         require(_amount > 0, "Bet amount must be positive");
-        require(userBalances[msg.sender] >= _amount, "Insufficient balance");
+        require(userBalances[_sender] >= _amount, "Insufficient balance");
         
-        userBalances[msg.sender] -= _amount;
+        userBalances[_sender] -= _amount;
         
         if (_choice) {
             prediction.totalYesAmount += _amount;
@@ -217,13 +218,13 @@ contract PredictionMarketplace is Ownable, ReentrancyGuard, Pausable {
             prediction.totalNoAmount += _amount;
         }
         
-        bets[_predictionId][msg.sender] = Bet({
+        bets[_predictionId][_sender] = Bet({
             amount: _amount,
             choice: _choice,
             claimed: false
         });
         
-        emit BetPlaced(_predictionId, msg.sender, _choice, _amount);
+        emit BetPlaced(_predictionId, _sender, _choice, _amount);
     }
 
     function resolvePrediction(uint256 _predictionId, bool _outcome) 
