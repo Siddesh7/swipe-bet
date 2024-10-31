@@ -1,15 +1,15 @@
 "use client";
 
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import {
   useAccount,
   useReadContract,
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
-import {parseEther} from "viem";
-import {Button} from "@/components/ui/button";
-import {Input} from "@/components/ui/input";
+import { parseEther } from "viem";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardHeader,
@@ -46,7 +46,7 @@ interface NewMarket {
 }
 
 export default function PredictionMarkets() {
-  const {address} = useAccount();
+  const { address } = useAccount();
   const [markets, setMarkets] = useState<Market[]>([]);
   const [newMarket, setNewMarket] = useState<NewMarket>({
     outcome1: "",
@@ -56,7 +56,7 @@ export default function PredictionMarkets() {
     requiredBond: "",
   });
 
-  const {data: allMarkets, refetch: refetchMarkets} = useReadContract({
+  const { data: allMarkets, refetch: refetchMarkets } = useReadContract({
     address: process.env.NEXT_PUBLIC_PREDICTION_MARKET_ADDRESS as `0x${string}`,
     abi: predictionMarketABI.abi,
     functionName: "getAllMarkets",
@@ -64,15 +64,14 @@ export default function PredictionMarkets() {
 
   useEffect(() => {
     if (allMarkets) {
-      console.log(allMarkets);
       setMarkets(allMarkets[1] as Market[]);
     }
   }, [allMarkets]);
 
-  const {writeContractAsync: initializeMarket, data: initializeData} =
+  const { writeContractAsync: initializeMarket, data: initializeData } =
     useWriteContract();
 
-  const {isLoading: isInitializing, isSuccess: isInitialized} =
+  const { isLoading: isInitializing, isSuccess: isInitialized } =
     useWaitForTransactionReceipt({
       hash: initializeData?.hash,
     });
@@ -98,7 +97,7 @@ export default function PredictionMarkets() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewMarket({...newMarket, [e.target.name]: e.target.value});
+    setNewMarket({ ...newMarket, [e.target.name]: e.target.value });
   };
 
   useEffect(() => {

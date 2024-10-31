@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useBalance, useAccount } from "wagmi";
+import React, { useEffect, useState } from "react";
+import { useBalance, useAccount, useReadContract } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { useEnsName } from "wagmi";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/sheet";
 import { Flame, Clock, Trophy, Target, User } from "lucide-react";
 import { base } from "wagmi/chains";
-
+import { PREDICTION_MARKET_ADDRESS, USDC_ADDRESS } from "@/constants";
+import PREDICTION_MARKET_ABI from "../lib/abi.json";
 const dummyData = {
   level: 7,
   xp: 85,
@@ -188,17 +189,24 @@ const CreatedBetCard = ({ bet }: { bet: any }) => (
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("placed");
   const [createdBets, setCreatedBets] = useState(dummyData.createdBets);
+  const [userBalance, setUserBalance] = useState<any>();
   const { user } = usePrivy();
   const { address } = useAccount();
   const { data: ethBalance } = useBalance({
     address,
     chainId: base.id, // Base mainnet chain ID
   });
-  const { data: usdcBalance } = useBalance({
-    address,
-    token: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC contract address on Base
-    chainId: base.id,
-  });
+  const { data: contractBalance, refetch: refetchContractBalance } =
+    useReadContract({
+      address: PREDICTION_MARKET_ADDRESS,
+      abi: PREDICTION_MARKET_ABI,
+      functionName: "getBalance",
+      account: address,
+    });
+
+  useEffect(() => {
+    setUserBalance(contractBalance);
+  }, [contractBalance]);
   const { data: ensName } = useEnsName({ address });
 
   const displayAddress = address
@@ -250,9 +258,7 @@ const Profile = () => {
               </p>
               <p className="text-lg font-bold mb-4 text-white flex justify-between items-center">
                 USDC Balance:{" "}
-                {usdcBalance
-                  ? `${Number(usdcBalance.value) / 1e6} USDC`
-                  : "Loading..."}
+                {userBalance && `${Number(userBalance) / 1e6} USDC`}
                 <Deposit />
               </p>
 

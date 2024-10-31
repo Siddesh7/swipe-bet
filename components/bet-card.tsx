@@ -1,11 +1,11 @@
-import React, {useState} from "react";
-import {motion} from "framer-motion";
-import {Plus, Minus, TrendingUp, TrendingDown, Check, X} from "lucide-react";
-import {Button} from "./ui/button";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Plus, Minus, TrendingUp, TrendingDown, Check, X } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface BetCardProps {
   id: number;
-  name: string;
+
   description: string;
   winPercentage: number;
   losePercentage: number;
@@ -19,7 +19,6 @@ interface BetCardProps {
 }
 
 const BetCard: React.FC<BetCardProps> = ({
-  name,
   description,
   winPercentage,
   losePercentage,
@@ -103,8 +102,7 @@ const BetCard: React.FC<BetCardProps> = ({
             className="rounded-full bg-red-500 text-white flex flex-row gap-1 hover:bg-red-400"
             onClick={onNoClick}
           >
-            <X  />
-           
+            <X />
           </Button>
           <Button
             variant={"outline"}
@@ -119,7 +117,6 @@ const BetCard: React.FC<BetCardProps> = ({
             className="rounded-full bg-green-500 text-white flex flex-row gap-1 hover:bg-green-400"
           >
             <Check size={24} />
-            
           </Button>
         </div>
       </div>

@@ -2,29 +2,19 @@ import React, { useEffect, useMemo, useState } from "react";
 import TinderCard from "react-tinder-card";
 import BetCard from "./bet-card";
 import { useReadContract } from "wagmi";
-import predictionMarketABI from "../lib/abi.json";
-import { formatEther, hexToString } from "viem";
-
+import PREDICTION_MARKET_ABI from "../lib/abi.json";
+import { PREDICTION_MARKET_ADDRESS } from "@/constants";
 interface Market {
-  resolved: boolean;
-  assertedOutcomeId: `0x${string}`;
-  outcome1Token: `0x${string}`;
-  outcome2Token: `0x${string}`;
-  reward: bigint;
-  requiredBond: bigint;
-  outcome1: `0x${string}`;
-  outcome2: `0x${string}`;
-  description: `0x${string}`;
-  imageString: string;
-}
-
-interface FormattedMarket
-  extends Omit<Market, "outcome1" | "outcome2" | "description" | "reward"> {
-  id: `0x${string}`;
-  outcome1: string;
-  outcome2: string;
-  description: string;
-  reward: string;
+  id: string;
+  creator: string;
+  totalYesAmount: string | number;
+  totalNoAmount: string | number;
+  isResolved: boolean;
+  bettingEndTime: any;
+  resolutionTime: any;
+  imageUri: string;
+  question: string;
+  outcome: string;
 }
 
 function CardBets() {
@@ -37,80 +27,42 @@ function CardBets() {
     if (direction === "right") setWagerAllowance((prev) => prev - 100);
   };
 
-  const [markets, setMarkets] = useState<FormattedMarket[]>([]);
+  const [markets, setMarkets] = useState<Market[]>([]);
 
-  const { data, isError, isLoading } = useReadContract({
-    address: process.env.NEXT_PUBLIC_PREDICTION_MARKET_ADDRESS as `0x${string}`,
-    abi: predictionMarketABI.abi,
-    functionName: "getAllMarkets",
-  });
+  const {
+    data: rawActivePredictions,
+    isError: isActivePredictionsError,
+    isLoading: isActivePredictionsLoading,
+    refetch: refetchActive,
+  } = useReadContract({
+    address: PREDICTION_MARKET_ADDRESS,
+    abi: PREDICTION_MARKET_ABI,
+    functionName: "getActivePredictions",
+  }) as {
+    data: unknown[] | undefined;
+    isError: boolean;
+    isLoading: boolean;
+    refetch: () => void;
+  };
 
-  console.log(data);
+  const placeBet = (side: boolean, betId: string) => {
+    console.log(side, betId);
+
+    //logic here
+    
+  };
   useEffect(() => {
-    if (data) {
-      const [marketIds, marketDetails] = data as any;
-      const formattedMarkets: FormattedMarket[] = marketIds.map((id, index) => {
-        const market = marketDetails[index];
-        return {
-          id,
-          ...market,
-          outcome1: hexToString(market.outcome1),
-          outcome2: hexToString(market.outcome2),
-          description: hexToString(market.description),
-          reward: formatEther(market.reward),
-          imageString: market.imageString,
-        };
-      });
-      setMarkets(formattedMarkets);
+    if (rawActivePredictions) {
+      setMarkets(rawActivePredictions as any);
     }
-  }, [data]);
+  }, [rawActivePredictions]);
 
   const outOfFrame = (name) => {
     console.log(name + " left the screen!");
   };
-  const betsHardCoded = [
-    // {
-    //   id: 1,
-    //   name: "Bitcoin Price Bet",
-    //   description:
-    //     "Will Bitcoin be above $50,000 by the end of the month? I speculate it to reach more than that in a month. So, I am betting on it.",
-    //   winPercentage: 60,
-    //   losePercentage: 40,
-    //   imageUrl:
-    //     "https://cdn.pixabay.com/photo/2023/11/08/13/56/ai-generated-8374812_1280.jpg",
-    //   betTime: "24h",
-    //   yesTotalAmount: 1000,
-    //   noTotalAmount: 500,
-    // },
-    // {
-    //   id: 2,
-    //   name: "Ethereum Price Bet",
-    //   description: "Will Ethereum be above $3,000 by the end of the month?",
-    //   winPercentage: 40,
-    //   losePercentage: 60,
-    //   imageUrl:
-    //     "https://cdn.pixabay.com/photo/2023/11/08/13/56/ai-generated-8374812_1280.jpg",
-    //   betTime: "24h",
-    //   yesTotalAmount: 500,
-    //   noTotalAmount: 1000,
-    // },
-    // {
-    //   id: 3,
-    //   name: "Dogecoin Price Bet",
-    //   description: "Will Dogecoin be above $1 by the end of the month?",
-    //   winPercentage: 80,
-    //   losePercentage: 20,
-    //   imageUrl:
-    //     "https://cdn.pixabay.com/photo/2023/11/08/13/56/ai-generated-8374812_1280.jpg",
-    //   betTime: "24h",
-    //   yesTotalAmount: 2000,
-    //   noTotalAmount: 100,
-    // },
-  ];
-
   const childRefs = useMemo<any>(
     () =>
-      Array(betsHardCoded.length)
+      Array(markets.length)
         .fill(0)
         .map((i) => React.createRef()),
     []
@@ -128,20 +80,32 @@ function CardBets() {
           >
             <BetCard
               id={Number(market.id)}
-              description={market.description}
-              winPercentage={50} // You might want to calculate this based on the market data
-              losePercentage={50} // You might want to calculate this based on the market data
-              imageUrl={market.imageString}
-              betTime="24h" // You might want to derive this from the market data
-              yesTotalAmount={0} // This might need adjustment based on your data structure
-              noTotalAmount={0}
+              description={market.question}
+              winPercentage={
+                (Number(market.totalYesAmount.toString()) /
+                  Number(market.totalNoAmount.toString())) *
+                100
+              }
+              losePercentage={
+                (Number(market.totalNoAmount.toString()) /
+                  Number(market.totalYesAmount.toString())) *
+                100
+              }
+              imageUrl={market.imageUri}
+              betTime={market.bettingEndTime}
+              yesTotalAmount={Number(market.totalYesAmount.toString())}
+              noTotalAmount={Number(market.totalNoAmount.toString())}
               onYesClick={async () => {
-                if (childRefs[index].current)
+                if (childRefs[index].current) {
                   await childRefs[index].current.swipe("right");
+                  placeBet(true, market.id);
+                }
               }}
               onNoClick={async () => {
-                if (childRefs[index].current)
+                if (childRefs[index].current) {
                   await childRefs[index].current.swipe("left");
+                  placeBet(false, market.id);
+                }
               }}
               onPassClick={async () => {
                 if (childRefs[index].current)

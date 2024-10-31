@@ -1,6 +1,6 @@
 "use client";
-import React, {useState, useEffect} from "react";
-import {useReadContract} from "wagmi";
+import React, { useState, useEffect } from "react";
+import { useReadContract } from "wagmi";
 import {
   Table,
   TableBody,
@@ -9,8 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {Card, CardHeader, CardTitle, CardContent} from "@/components/ui/card";
-import {bytesToString, hexToString, formatEther} from "viem";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { bytesToString, hexToString, formatEther } from "viem";
 
 // Define types for our Market structure
 interface Market {
@@ -48,15 +48,19 @@ const abi = [
       },
       {
         components: [
-          {internalType: "bool", name: "resolved", type: "bool"},
-          {internalType: "bytes32", name: "assertedOutcomeId", type: "bytes32"},
-          {internalType: "address", name: "outcome1Token", type: "address"},
-          {internalType: "address", name: "outcome2Token", type: "address"},
-          {internalType: "uint256", name: "reward", type: "uint256"},
-          {internalType: "uint256", name: "requiredBond", type: "uint256"},
-          {internalType: "bytes", name: "outcome1", type: "bytes"},
-          {internalType: "bytes", name: "outcome2", type: "bytes"},
-          {internalType: "bytes", name: "description", type: "bytes"},
+          { internalType: "bool", name: "resolved", type: "bool" },
+          {
+            internalType: "bytes32",
+            name: "assertedOutcomeId",
+            type: "bytes32",
+          },
+          { internalType: "address", name: "outcome1Token", type: "address" },
+          { internalType: "address", name: "outcome2Token", type: "address" },
+          { internalType: "uint256", name: "reward", type: "uint256" },
+          { internalType: "uint256", name: "requiredBond", type: "uint256" },
+          { internalType: "bytes", name: "outcome1", type: "bytes" },
+          { internalType: "bytes", name: "outcome2", type: "bytes" },
+          { internalType: "bytes", name: "description", type: "bytes" },
         ],
         internalType: "struct PredictionMarket.Market[]",
         name: "",
@@ -77,13 +81,11 @@ const PredictionMarkets: React.FC<PredictionMarketsProps> = ({
 }) => {
   const [markets, setMarkets] = useState<FormattedMarket[]>([]);
 
-  const {data, isError, isLoading} = useReadContract({
+  const { data, isError, isLoading } = useReadContract({
     address: contractAddress,
     abi: abi,
     functionName: "getAllMarkets",
   });
-
-  console.log(data, isError, isLoading);
 
   useEffect(() => {
     if (data) {

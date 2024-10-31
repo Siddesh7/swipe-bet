@@ -1,8 +1,8 @@
 import React from "react";
-import {Sixtyfour} from "next/font/google";
-import {PlusIcon, User} from "lucide-react";
-import {Button} from "./button";
-import {usePrivy} from "@privy-io/react-auth";
+import { Sixtyfour } from "next/font/google";
+import { PlusIcon, User } from "lucide-react";
+import { Button } from "./button";
+import { usePrivy } from "@privy-io/react-auth";
 import NewBet from "../new-bet";
 
 export const sixtyfour = Sixtyfour({
@@ -11,7 +11,7 @@ export const sixtyfour = Sixtyfour({
   display: "swap",
 });
 const Header = () => {
-  const {authenticated} = usePrivy();
+  const { authenticated } = usePrivy();
   return (
     <div className="flex flex-row justify-between w-full p-4">
       <h2 className={`text-primary text-2xl ${sixtyfour.className}`}>SwipeX</h2>
@@ -23,10 +23,7 @@ const Header = () => {
             size={"icon"}
             className="text-white p-1"
           >
-            <NewBet onCreateBet={(bet) => {
-              // Handle bet creation logic here
-              console.log('New bet created:', bet);
-            }} />
+            <NewBet />
           </Button>
         </div>
       )}
