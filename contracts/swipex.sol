@@ -195,7 +195,8 @@ contract PredictionMarketplace is Ownable, ReentrancyGuard, Pausable {
     function placeBet(
         uint256 _predictionId, 
         bool _choice,
-        uint256 _amount
+        uint256 _amount,
+        address _sender
     ) 
         external 
         whenNotPaused
@@ -207,9 +208,9 @@ contract PredictionMarketplace is Ownable, ReentrancyGuard, Pausable {
         require(!prediction.isResolved, "Prediction already resolved");
         require(block.timestamp < prediction.bettingEndTime, "Betting period ended");
         require(_amount > 0, "Bet amount must be positive");
-        require(userBalances[msg.sender] >= _amount, "Insufficient balance");
+        require(userBalances[_sender] >= _amount, "Insufficient balance");
         
-        userBalances[msg.sender] -= _amount;
+        userBalances[_sender] -= _amount;
         
         if (_choice) {
             prediction.totalYesAmount += _amount;
@@ -217,13 +218,13 @@ contract PredictionMarketplace is Ownable, ReentrancyGuard, Pausable {
             prediction.totalNoAmount += _amount;
         }
         
-        bets[_predictionId][msg.sender] = Bet({
+        bets[_predictionId][_sender] = Bet({
             amount: _amount,
             choice: _choice,
             claimed: false
         });
         
-        emit BetPlaced(_predictionId, msg.sender, _choice, _amount);
+        emit BetPlaced(_predictionId, _sender, _choice, _amount);
     }
 
     function resolvePrediction(uint256 _predictionId, bool _outcome) 
@@ -333,6 +334,89 @@ contract PredictionMarketplace is Ownable, ReentrancyGuard, Pausable {
         return activePredictions;
     }
 
+    function getUserCreatedPredictions(address _user) 
+        external 
+        view 
+        returns (PredictionView[] memory) 
+    {
+        // First, count predictions created by user
+        uint256 count = 0;
+        for (uint256 i = 0; i < predictionCounter; i++) {
+            if (predictions[i].exists && predictions[i].creator == _user) {
+                count++;
+            }
+        }
+        
+        // Create array of correct size
+        PredictionView[] memory userPredictions = new PredictionView[](count);
+        uint256 currentIndex = 0;
+        
+        // Fill array with predictions
+        for (uint256 i = 0; i < predictionCounter; i++) {
+            Prediction storage pred = predictions[i];
+            if (pred.exists && pred.creator == _user) {
+                userPredictions[currentIndex] = PredictionView({
+                    id: i,
+                    creator: pred.creator,
+                    question: pred.question,
+                    imageUri: pred.imageUri,
+                    resolutionTime: pred.resolutionTime,
+                    bettingEndTime: pred.bettingEndTime,
+                    isResolved: pred.isResolved,
+                    outcome: pred.outcome,
+                    totalYesAmount: pred.totalYesAmount,
+                    totalNoAmount: pred.totalNoAmount
+                });
+                currentIndex++;
+            }
+        }
+        
+        return userPredictions;
+    }
+
+ function getUserBets(address _user) 
+    external 
+    view 
+    returns (PredictionView[] memory predictionViews, Bet[] memory userBets) 
+{
+    // First, count predictions where user has placed bets
+    uint256 count = 0;
+    for (uint256 i = 0; i < predictionCounter; i++) {
+        Prediction storage pred = predictions[i];
+        if (pred.exists && bets[i][_user].amount > 0) {
+            count++;
+        }
+    }
+    
+    // Create arrays of correct size
+    predictionViews = new PredictionView[](count);
+    userBets = new Bet[](count);
+    uint256 currentIndex = 0;
+    
+    // Fill arrays with predictions and corresponding bets
+    for (uint256 i = 0; i < predictionCounter; i++) {
+        Prediction storage pred = predictions[i];
+        if (pred.exists && bets[i][_user].amount > 0) {
+            predictionViews[currentIndex] = PredictionView({
+                id: i,
+                creator: pred.creator,
+                question: pred.question,
+                imageUri: pred.imageUri,
+                resolutionTime: pred.resolutionTime,
+                bettingEndTime: pred.bettingEndTime,
+                isResolved: pred.isResolved,
+                outcome: pred.outcome,
+                totalYesAmount: pred.totalYesAmount,
+                totalNoAmount: pred.totalNoAmount
+            });
+            
+            userBets[currentIndex] = bets[i][_user];
+            currentIndex++;
+        }
+    }
+    
+    return (predictionViews, userBets);
+}
     function getPredictionDetails(uint256 _predictionId) 
         external 
         view 

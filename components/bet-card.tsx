@@ -5,7 +5,7 @@ import {Button} from "./ui/button";
 
 interface BetCardProps {
   id: number;
-  name: string;
+
   description: string;
   winPercentage: number;
   losePercentage: number;
@@ -16,10 +16,11 @@ interface BetCardProps {
   onYesClick: () => void;
   onNoClick: () => void;
   onPassClick: () => void;
+  betAmountInput: number;
+  setBetAmountInput: (value: number) => void;
 }
 
 const BetCard: React.FC<BetCardProps> = ({
-  name,
   description,
   winPercentage,
   losePercentage,
@@ -30,21 +31,20 @@ const BetCard: React.FC<BetCardProps> = ({
   onYesClick,
   onNoClick,
   onPassClick,
+  betAmountInput,
+  setBetAmountInput,
 }) => {
-  const [betAmount, setBetAmount] = useState(1);
-
-  const handleIncreaseBet = () => setBetAmount((prev) => prev + 1);
-  const handleDecreaseBet = () => setBetAmount((prev) => Math.max(1, prev - 1));
+  const handleIncreaseBet = () => setBetAmountInput(betAmountInput + 1);
+  const handleDecreaseBet = () => setBetAmountInput(betAmountInput - 1);
 
   return (
     <div className="w-full max-w-sm mx-auto h-[calc(100vh-4rem)] bg-black text-white rounded-xl shadow-lg overflow-hidden">
       <div className="relative h-1/3 w-full">
-        <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
+        <img src={imageUrl} className="w-full h-full object-cover" />
         <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black to-transparent" />
         <div className="absolute bottom-4 left-4 flex items-center">
-          <h2 className="text-2xl font-bold mr-2">{name}</h2>
           <span className="bg-red-600 text-white text-xs px-2 py-1 rounded-full">
-            {betTime}
+            <TimestampDisplay timestamp={betTime.toString()} />
           </span>
         </div>
       </div>
@@ -83,9 +83,9 @@ const BetCard: React.FC<BetCardProps> = ({
             <span className="text-white">$</span>
             <input
               type="number"
-              value={betAmount}
+              value={betAmountInput}
               onChange={(e) =>
-                setBetAmount(Math.max(1, parseInt(e.target.value) || 1))
+                setBetAmountInput(Math.max(1, parseInt(e.target.value) || 1))
               }
               className="w-16 text-center bg-gray-800 text-white"
             />
@@ -97,14 +97,13 @@ const BetCard: React.FC<BetCardProps> = ({
             <Plus size={20} color="white" />
           </button>
         </div>
-        <div className="flex justify-around mt-4">
+        {/* <div className="flex justify-around mt-4">
           <Button
             variant={"outline"}
             className="rounded-full bg-red-500 text-white flex flex-row gap-1 hover:bg-red-400"
             onClick={onNoClick}
           >
-            <X  />
-           
+            <X />
           </Button>
           <Button
             variant={"outline"}
@@ -119,12 +118,18 @@ const BetCard: React.FC<BetCardProps> = ({
             className="rounded-full bg-green-500 text-white flex flex-row gap-1 hover:bg-green-400"
           >
             <Check size={24} />
-            
           </Button>
-        </div>
+        </div> */}
       </div>
     </div>
   );
 };
-
+const TimestampDisplay = ({timestamp}: {timestamp: string}) => {
+  const date = new Date(parseInt(timestamp) * 1000);
+  return (
+    <span className="text-gray-700">
+      {date.toLocaleDateString()} {date.toLocaleTimeString()}
+    </span>
+  );
+};
 export default BetCard;
