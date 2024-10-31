@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="start">
+  <img src="./public//logo.png" alt="Prediction Marketplace Logo" width="200">
+</div>
 
-## Getting Started
+A seamless, Tinder-like prediction marketplace built on the Aurora blockchain where users can create predictions, place bets, and participate in market.
 
-First, run the development server:
+## 🌟 Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Swipe-to-Predict Interface**: Tinder-like experience for browsing and interacting with prediction markets
+- **Gasless Betting**: Place bets without signing transactions for each interaction
+- **AI-Powered Resolution**: Automated market resolution using AI agents and MASA protocol
+- **Challenge System**: Ability to contest AI decisions for fair market outcomes
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🏗 Technical Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Smart Contracts
+- Prediction Market Contract
+- Gasless Transaction Handler
+- Challenge Resolution System
 
-## Learn More
+### AI Resolution System
+- Integration with MASA protocol
+- Automated information verification from:
+  - Google Search Results
+  - Twitter Data
+- Resolution Algorithm
+- Challenge Processing
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔮 Future Roadmap
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### AI-Powered Market Creation
+- Autonomous Market Generation: AI agents will automatically create prediction markets based on:
 
-## Deploy on Vercel
+- Twitter trending topics
+- Google trending searches
+- Viral news stories
+- Emerging social media conversations
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Enhanced AI Capabilities
+- Real-time Trend Analysis
+
+- Continuous monitoring of social media trends
+- Sentiment analysis of public discussions
+- Popularity tracking and market potential assessment
+- Automated market liquidity optimization
+
+### Smart Market Selection
+
+- Intelligent Filtering System
+
+- Relevance scoring for potential markets
+- Spam and low-quality topic filtering
+- Duplicate market prevention
+- Community interest prediction
+
+
+### Automated Market Management
+
+- Dynamic Market Parameters
+
+- AI-adjusted betting periods based on trend lifecycle
+- Smart liquidity pool management
+- Automated stake size recommendations
+- Risk assessment for different market types
+
+
+
+### User Experience Enhancements
+
+- Personalized Market Discovery
+
+- Custom market recommendations based on user interests
+- Trending markets notifications
+- Category-based market organization
+- Social sharing integration
+
+
+## 📱 Live Deployment
+### Aurora Mainnet Contract:
+  - 0x10cBc1a1DE344118fae80bd1a3F81cF4A073F4e9
